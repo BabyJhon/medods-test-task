@@ -1,0 +1,137 @@
+definitions:
+  handlers.Error:
+    properties:
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API для аутентификации пользователей
+  title: Medods Test Task API
+  version: "1.0"
+paths:
+  /auth:
+    get:
+      description: Генерирует access и refresh токены для пользователя по guid. Токены
+        возвращаются в httpOnly cookie.
+      parameters:
+      - description: GUID пользователя
+        example: 1e44baa9-e04b-4739-89f3-3d86b9a272ce
+        in: query
+        name: guid
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Токены успешно созданы
+          headers:
+            Set-Cookie:
+              description: access_token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzZXNzaW9uX2lkIjoiOTJiYmRkMTUtNmE3Ny00MWM2LTg2MzAtN2NkYWVjYmRmOGVjIiwidXNlcl9hZ2VudCI6IlBvc3RtYW5SdW50aW1lLzcuNDQuMSIsImlwIjoiMTcyLjE4LjAuMSIsImV4cCI6MTc1MTg2NDc1NCwiaWF0IjoxNzUxODYzODU0fQ.IdFs5M0cYIa1w7iBqvj5sgtvB8ufuHGpsGVUACnJxCT4MVg2nmFPPxBOamZU4nLVQOjFy9bmBqKzcNxdAb5z5Q;refresh_token=FbI-aH-FhxcYoZaZ6mdb9pBDzi--OcKL7sJT5Du04Xk
+              type: string
+          schema:
+            type: string
+        "400":
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/handlers.Error'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handlers.Error'
+      summary: Получить access и refresh токены
+      tags:
+      - auth
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет access и refresh токены с помощью текущего refresh токена
+        из cookie
+      parameters:
+      - description: Токены в cookie (необходимы refresh_token и access_token)
+        in: header
+        name: Cookie
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Токены успешно обновлены
+          headers:
+            Set-Cookie:
+              description: refresh_token=<новый_refresh_token>
+              type: string
+          schema:
+            type: string
+        "400":
+          description: Неверные или отсутствующие токены
+          schema:
+            $ref: '#/definitions/handlers.Error'
+        "401":
+          description: Невалидные или просроченные токены
+          schema:
+            $ref: '#/definitions/handlers.Error'
+      summary: Обновление токенов
+      tags:
+      - auth
+  /revoke:
+    post:
+      description: Отзывает текущую сессию пользователя по JWT токену. Удаляет сессию
+        из системы.
+      parameters:
+      - description: 'Токен доступа в формате: Bearer <JWT>'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пустой ответ при успешном отзыве
+          schema:
+            type: string
+        "401":
+          description: 'Неавторизованный доступ: отсутствует/неверный заголовок Authorization,
+            невалидный токен'
+          schema:
+            $ref: '#/definitions/handlers.Error'
+        "500":
+          description: Внутренняя ошибка сервера при отзыве токена
+          schema:
+            $ref: '#/definitions/handlers.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Отзыв токенов
+      tags:
+      - auth
+  /user:
+    get:
+      description: Возвращает UUID пользователя по JWT токену из заголовка Authorization
+      parameters:
+      - description: 'Токен доступа в формате: Bearer <token>'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: UUID пользователя в формате строки
+          schema:
+            type: string
+        "401":
+          description: Неавторизованный доступ
+          schema:
+            $ref: '#/definitions/handlers.Error'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handlers.Error'
+      security:
+      - ApiKeyAuth: []
+      summary: Получить UUID пользователя
+      tags:
+      - user
+swagger: "2.0"

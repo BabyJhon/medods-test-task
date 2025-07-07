@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  medods-test-task:
+    container_name: auth-service
+    build: ./
+    entrypoint: /app/entrypoint.sh
+    command: /app/bin
+    ports:
+      - 8000:8000
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - "DB_PASSWORD=${PG_PASSWORD}"
+    volumes:
+      - ./entrypoint.sh:/app/entrypoint.sh
+    restart: unless-stopped
+
+  db:
+    restart: unless-stopped
+    image: postgres:17-alpine
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      - "POSTGRES_DB=${PG_DATABASE_NAME}"
+      - "POSTGRES_USER=${PG_USER}"
+      - "POSTGRES_PASSWORD=${PG_PASSWORD}"
+    ports:
+      - "${PG_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
